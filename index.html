@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<body>
+    <h3>Get Recent Matches of your favorite DOTA 2 pro player</h3>
+    <div style="margin: 2rem;">
+        <label>Select Player</label>
+        <select id="playerSelect">
+            
+        </select>
+        <button id="entersearch">Enter</button>
+    </div>
+    <div id="playerprofile" style="display: none;">
+        <img width="150rem" height="150rem" id="prfl_avatar" src="">
+        <div style="display: inline-block">
+            <span>Name: </span><span id="prfl_name"></span><br>
+            <span>Steam ID: </span><span id="prfl_sid"></span><br>
+            <span>Profile URL: </span><a id="prfl_url"></a><br>
+        </div>
+    </div>
+    <div id="content" style="background-color: wheat">
+        
+    </div>
+</body>
+<script>
+    const parent = document.getElementById('playerSelect');
+    const entersearch = document.getElementById('entersearch');
+    const playerprofile = document.getElementById('playerprofile');
+    let players = [];
+
+    const loadPlayers = () => {
+        return new Promise((resolve, reject) => {
+            fetch('https://api.opendota.com/api/proPlayers')
+            .then(res => res.json())
+            .then((data) => {
+                players = data;
+                players.forEach((player) => {
+                    let option = document.createElement('option');
+                    option.innerHTML = player.name;
+                    option.value = player.account_id;
+                    parent.append(option);
+                    resolve(true);
+                })
+            })
+            .catch(reject);
+        });
+    }
+
+    const loadPlayerHistory = (id) => {
+        if (!id)
+            return Promise.reject(new Error('Wrong parameter'))
+        return new Promise((resolve, reject) => {
+            fetch(`https://api.opendota.com/api/players/${id}/recentMatches`)
+                .then(res => res.json())
+                .then(data => resolve(data))
+                .catch(err => reject(err))
+        })
+    }
+
+    (async function onload(){
+        await loadPlayers();
+        entersearch.addEventListener('click', async () => {
+            const act_id = parent.options[parent.selectedIndex].value;
+            clearContent();
+            
+            loadPlayerHistory(act_id)
+                .then(hists => {
+                    content.innerHTML = hists.map(hist => contentFormat(hist)).join('');
+                })
+                .catch(e => alert('An error has occured'));
+            
+            // load profile section
+            playerprofile.style.display = 'block';
+
+            const selected = players.filter(player => player.account_id == act_id);
+            (document.getElementById('prfl_avatar')).setAttribute('src', selected[0].avatarfull);
+            document.getElementById('prfl_name').innerHTML = selected[0].name;
+            document.getElementById('prfl_sid').innerHTML = selected[0].steamid;
+            
+            const link = document.getElementById('prfl_url');
+            link.setAttribute('href', selected[0].profileurl);
+            link.innerHTML = selected[0].profileurl;
+        });
+    })();
+
+    /* UTILS */
+    function clearContent(){
+        const content = document.getElementById('content');
+        content.innerHTML = '';
+    }
+
+    function contentFormat(data){
+        return `<div>
+        <span>Match ID: ${data.match_id}</span><br>
+        <data>Start Time: ${new Date(data.start_time * 1000)}</span><br>
+        <span>Radiant Win: ${data.radiant_win}</span><br>
+        <span>Duration: ${data.duration / 60} mins</span><br>
+        <span>Hero ID: ${data.hero_id}</span><br>
+        <span>K/D/A: ${data.kills}/${data.deaths}/${data.assists} </span><br>
+        <span>XPM: ${data.xp_per_min}</span><br>
+        <span>GPM: ${data.gold_per_min}</span><br>
+        </div>
+        <hr>`;
+    }
+
+</script>
+</html>
