@@ -99,7 +99,7 @@
         <span>Match ID: ${data.match_id}</span><br>
         <data>Start Time: ${new Date(data.start_time * 1000)}</span><br>
         <span>Radiant Win: ${data.radiant_win}</span><br>
-        <span>Duration: ${data.duration / 60} mins</span><br>
+        <span>Duration: ${(data.duration / 60).toFixed(2)} mins</span><br>
         <span>Hero ID: ${data.hero_id}</span><br>
         <span>K/D/A: ${data.kills}/${data.deaths}/${data.assists} </span><br>
         <span>XPM: ${data.xp_per_min}</span><br>
